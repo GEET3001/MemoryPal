@@ -1,8 +1,8 @@
-# MemoryPal - Your Digital Second Brain 🧠
+# MemoryPal - Your Digital Second Brain 
 
 MemoryPal is a premium, distraction-free laboratory for your thoughts. Capture notes, curate links, and chat with your personal AI companion—all in one place.
 
-## 🚀 Key Features
+##  Key Features
 
 - **Personal AI Assistant**: Every note gets its own AI companion that understands its specific context.
 - **Distraction-Free Editor**: A split-pane "Laboratory" layout for writing and brainstorming.
@@ -10,7 +10,7 @@ MemoryPal is a premium, distraction-free laboratory for your thoughts. Capture n
 - **Context Isolation**: AI chats are isolated per note, ensuring your data remains private and relevant.
 - **Modern Tech**: Built with React, TypeScript, and Google's Gemini 2.0.
 
-## 📊 Application Workflows
+##  Application Workflows
 
 ### 1. User Journey Flow
 ```mermaid
@@ -57,7 +57,7 @@ graph LR
     F -->|No| H[Redirect to Sign In]
 ```
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 ### Frontend
 - **React + Vite**: High-performance UI.
@@ -70,7 +70,7 @@ graph LR
 - **MongoDB + Mongoose**: Real-time document storage.
 - **Gemini 2.0 Flash**: State-of-the-art AI integration.
 
-## 📦 Deployment Guide
+##  Deployment Guide
 
 ### Backend (Railway/Render)
 1. Set `MONGO_URL`, `JWT_PASSWORD`, and `GEMINI_API_KEY` in environment variables.
@@ -81,4 +81,3 @@ graph LR
 2. Run `npm run build` and deploy the `dist` folder.
 
 ---
-Built with ❤️ for the future of knowledge management.
