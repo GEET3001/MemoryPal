@@ -1,95 +1,195 @@
-import express from "express" ;
-import jwt from "jsonwebtoken" ;
-import mongoose from "mongoose";
-import { UserModel } from "./db";
-import { ContentModel } from "./db";
-import { JWT_PASSWORD } from "./config";
+import express from "express";
+import jwt from "jsonwebtoken";
+import cors from "cors";
+import { UserModel, ContentModel, ChatModel } from "./db";
+import { JWT_PASSWORD, PORT, GEMINI_API_KEY } from "./config";
 import { userMiddleware } from "./middleware";
+import { random } from "./utils";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const app = express() ;
+const app = express();
 app.use(express.json());
+app.use(cors());
 
-app.post("/api/v1/signup" ,async (req,res) => {
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+const modelAI = genAI.getGenerativeModel({ 
+    model: "gemini-2.0-flash",
+});
 
-    const username = req.body.username ; 
-    const password = req.body.password ;
-  try{
-   await UserModel.create({
-    username: username ,
-    password: password
-   })
+// Global logger to see all incoming requests
+app.use((req, res, next) => {
+    console.log(`${req.method} ${req.url}`);
+    next();
+});
 
-   res.json({
-    message : "user signed up"
-   })
-}
-catch(e){
-    res.status(411).json({
-        messgae:"user already exists" 
-    })
-}
-})
-app.post("/api/v1/signin" ,async(req,res) => {
-    const username = req.body.username ;
-    const password = req.body.password ;
-    const existingUser = await UserModel.findOne({
-        username , 
-        password
-    })
+app.get("/", (req, res) => {
+    res.send("MemoryPal API is running. Visit port 5173 for the frontend.");
+});
+
+app.post("/api/v1/signup", async (req, res) => {
+    const username = req.body.username?.trim();
+    const password = req.body.password;
+    try {
+        await UserModel.create({ username, password });
+        res.json({ message: "User signed up" });
+    } catch (e) {
+        res.status(411).json({ message: "User already exists" });
+    }
+});
+
+app.post("/api/v1/signin", async (req, res) => {
+    const username = req.body.username?.trim();
+    const password = req.body.password;
+    const existingUser = await UserModel.findOne({ username, password });
+
     if (existingUser) {
-        const token = jwt.sign({
-           id: existingUser._id
-        }, JWT_PASSWORD)
+        const token = jwt.sign({ id: existingUser._id }, JWT_PASSWORD);
+        res.json({ token });
+    } else {
+        res.status(403).json({ message: "Incorrect credentials" });
+    }
+});
 
-        res.json({
-            token
-        })
+// --- CHAT ROUTES (Placed early to avoid matching conflict) ---
+
+app.get("/api/v1/content/:contentId/chat", userMiddleware, async (req, res) => {
+    try {
+        const contentId = req.params.contentId;
+        const messages = await ChatModel.find({
+            contentId,
+            //@ts-ignore
+            userId: req.userId
+        }).sort({ createdAt: 1 });
+        res.json({ messages });
+    } catch (e) {
+        res.status(500).json({ message: "Error fetching chat" });
     }
-    else{
-        res.status(403).json({
-            message: "incorrect credentials" 
-        })
+});
+
+app.post("/api/v1/content/:contentId/chat", userMiddleware, async (req, res) => {
+    const contentId = req.params.contentId;
+    const { message } = req.body;
+    try {
+        const content = await ContentModel.findOne({
+            _id: contentId,
+            //@ts-ignore
+            userId: req.userId
+        });
+        if (!content) {
+            res.status(404).json({ message: "Note not found" });
+            return;
+        }
+
+        const history = await ChatModel.find({
+            contentId,
+            //@ts-ignore
+            userId: req.userId
+        }).sort({ createdAt: 1 });
+
+        const systemPrompt = `You are a helpful assistant for a specific note. 
+        CONTEXT:
+        Title: ${content.title}
+        Description: ${content.description || ""}
+        Links: ${content.links.join(", ")}
+        
+        Answer ONLY based on this note.`;
+
+        // Try different models if one fails
+        const modelsToTry = ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-1.5-flash"];
+        let responseText = "";
+        let error = null;
+
+        for (const modelName of modelsToTry) {
+            try {
+                console.log(`Attempting AI response with model: ${modelName}`);
+                const model = genAI.getGenerativeModel({ model: modelName });
+                const chat = model.startChat({
+                    history: history.map(m => ({
+                        role: m.role,
+                        parts: [{ text: m.text }]
+                    })),
+                });
+
+                const fullMessage = history.length === 0 ? `${systemPrompt}\n\nUser: ${message}` : message;
+                const result = await chat.sendMessage(fullMessage);
+                responseText = result.response.text();
+                if (responseText) break;
+            } catch (e) {
+                console.error(`Model ${modelName} failed:`, e);
+                error = e;
+                continue;
+            }
+        }
+
+        if (!responseText) {
+            throw error || new Error("All AI models failed");
+        }
+
+        await ChatModel.create([
+            //@ts-ignore
+            { contentId, userId: req.userId, role: "user", text: message },
+            //@ts-ignore
+            { contentId, userId: req.userId, role: "model", text: responseText }
+        ]);
+
+        res.json({ response: responseText });
+    } catch (e) {
+        console.error("Final Chat error:", e);
+        res.status(500).json({ message: "AI processing failed. Check backend logs for model errors." });
     }
-})
-app.post("/api/v1/content",userMiddleware, async (req,res) => {
-    const link = req.body.link ;
-    const type = req.body.type ;
-    try{
-        await ContentModel.create({
-        link ,
-        type ,
+});
+
+// --- CONTENT ROUTES ---
+
+app.post("/api/v1/content", userMiddleware, async (req, res) => {
+    const { links, title, description } = req.body;
+    await ContentModel.create({
+        links, title, description,
         //@ts-ignore
-        userId: req.userId ,
-        tags: []
-    }) 
-    
-    
-    return res.json({
-        message : "Content added"
-    })}
-    catch(e){
+        userId: req.userId,
+        shareHash: random(10)
+    });
+    res.json({ message: "Note added" });
+});
 
+app.get("/api/v1/content", userMiddleware, async (req, res) => {
+    //@ts-ignore
+    const userId = req.userId;
+    const content = await ContentModel.find({ userId }).sort({ createdAt: -1 });
+    res.json({ content });
+});
+
+app.put("/api/v1/content/:contentId", userMiddleware, async (req, res) => {
+    const contentId = req.params.contentId;
+    const { title, links, description } = req.body;
+    await ContentModel.updateOne({
+        _id: contentId,
+        //@ts-ignore
+        userId: req.userId
+    }, { title, links, description });
+    res.json({ message: "Note updated" });
+});
+
+app.delete("/api/v1/content", userMiddleware, async (req, res) => {
+    const { contentId } = req.body;
+    await ContentModel.deleteOne({
+        _id: contentId,
+        //@ts-ignore
+        userId: req.userId
+    });
+    res.json({ message: "Deleted" });
+});
+
+app.get("/api/v1/shared/:shareHash", userMiddleware, async (req, res) => {
+    const shareHash = req.params.shareHash;
+    const content = await ContentModel.findOne({ shareHash });
+    if (!content) {
+        res.status(404).json({ message: "Note not found" });
+        return;
     }
-})
-app.get("/api/v1/content" ,userMiddleware , async (req,res) => {
-    //@ts-ignore
-    const userId = req.userId ; 
-    const content = await ContentModel.find({
-        userId: userId
-    }).populate("userId" , "username")
-    res.json({
-        content
-    })
-})
+    res.json({ content });
+});
 
-app.delete("/api/v1/content" ,userMiddleware ,async (req,res) => {
-    const contentId = req.body.contentId ;
-   await ContentModel.deleteMany({
-    contentId ,
-    //@ts-ignore
-    userId : req.userId
-   })
-   res.json({
-      message : "deleted"
-   })
-})
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});

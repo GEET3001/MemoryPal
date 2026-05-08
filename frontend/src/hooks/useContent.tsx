@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { BACKEND_URL } from "../config";
 
 export function useContent() {
-    const [contents, setContents] = useState([]);
+    const [contents, setContents] = useState<any[]>([]);
 
     function refresh() {
         axios.get(`${BACKEND_URL}/api/v1/content`, {
@@ -11,7 +11,7 @@ export function useContent() {
                 "Authorization": localStorage.getItem("token")
             }
         })
-            .then((response) => {
+            .then((response: any) => {
                 setContents(response.data.content)
             })
     }

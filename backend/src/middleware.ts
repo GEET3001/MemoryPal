@@ -1,19 +1,32 @@
-import { NextFunction , Request ,Response } from "express";
-import jwt from "jsonwebtoken" ;
+import { NextFunction, Request, Response } from "express";
+import jwt from "jsonwebtoken";
 import { JWT_PASSWORD } from "./config";
 
-export const userMiddleware = (req :Request , res: Response , next: NextFunction) => {
-    const header = req.headers["authorization"] ;
-    const decoded = jwt.verify(header as string, JWT_PASSWORD )
-
-    if(!decoded){
-        //@ts-ignore
-        req.userId = decoded.id ;
-        next()
-    }
-    else{
+export const userMiddleware = (req: Request, res: Response, next: NextFunction) => {
+    const header = req.headers["authorization"];
+    
+    if (!header) {
         res.status(403).json({
-            message : "u r not logged in"
-        })
+            message: "Authorization header missing"
+        });
+        return;
+    }
+
+    try {
+        const decoded = jwt.verify(header as string, JWT_PASSWORD) as { id: string };
+        
+        if (decoded) {
+            // @ts-ignore
+            req.userId = decoded.id;
+            next();
+        } else {
+            res.status(403).json({
+                message: "You are not logged in"
+            });
+        }
+    } catch (e) {
+        res.status(403).json({
+            message: "Invalid token"
+        });
     }
 }
