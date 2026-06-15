@@ -22,10 +22,13 @@ const ContentSchema = new Schema({
     title: { type: String, required: true },
     links: [String],
     description: String,
+    tags: { type: [String], default: [] },
     userId: { type: mongoose.Types.ObjectId, ref: 'User', required: true },
     isShared: { type: Boolean, default: false },
     shareHash: { type: String, unique: true, sparse: true }
 }, { timestamps: true });
+
+ContentSchema.index({ title: 'text', description: 'text' });
 
 export const ContentModel = model("Content", ContentSchema);
 

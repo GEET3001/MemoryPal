@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MemoryPal</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #fff;
+      width: 360px;
+      min-height: 200px;
+      color: #111827;
+    }
+
+    .header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #f3f4f6;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+    }
+
+    .logo span { color: #7c3aed; }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #d1d5db;
+    }
+
+    .status-dot.connected { background: #10b981; }
+
+    .content { padding: 20px; }
+
+    label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #f3f4f6;
+      border-radius: 12px;
+      font-size: 13px;
+      font-family: inherit;
+      background: #f9fafb;
+      color: #111827;
+      outline: none;
+      transition: all 0.15s;
+      margin-bottom: 14px;
+    }
+
+    input:focus, textarea:focus {
+      background: #fff;
+      border-color: #ddd6fe;
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.08);
+    }
+
+    textarea { resize: none; height: 80px; }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 14px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-primary {
+      background: #7c3aed;
+      color: #fff;
+    }
+
+    .btn-primary:hover { background: #6d28d9; }
+    .btn-primary:disabled { opacity: 0.4; cursor: default; }
+
+    .btn-secondary {
+      background: #f3f4f6;
+      color: #6b7280;
+      margin-top: 8px;
+    }
+
+    .btn-secondary:hover { background: #e5e7eb; }
+
+    .error {
+      background: #fef2f2;
+      color: #b91c1c;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 14px;
+      display: none;
+    }
+
+    .success-view {
+      padding: 40px 20px;
+      text-align: center;
+      display: none;
+    }
+
+    .success-icon {
+      width: 52px;
+      height: 52px;
+      background: #f5f3ff;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+    }
+
+    .success-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: #111827;
+      margin-bottom: 6px;
+    }
+
+    .success-sub {
+      font-size: 13px;
+      color: #9ca3af;
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .tag-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      background: #f5f3ff;
+      color: #6d28d9;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .tag-remove {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #a78bfa;
+      font-size: 13px;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .tag-remove:hover { color: #6d28d9; }
+
+    .tag-input-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .tag-input-row input {
+      margin-bottom: 0;
+      flex: 1;
+    }
+
+    .tag-add-btn {
+      padding: 10px 14px;
+      background: #f5f3ff;
+      color: #6d28d9;
+      border: none;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .tag-add-btn:hover { background: #ede9fe; }
+
+    #login-view, #save-view, #success-view { display: none; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">Memory<span>Pal</span></div>
+    <div class="status-dot" id="status-dot"></div>
+  </div>
+
+  <!-- Login View -->
+  <div id="login-view" class="content">
+    <div class="error" id="login-error">Incorrect username or password.</div>
+    <label for="username">Username</label>
+    <input type="text" id="username" placeholder="Your username" autocomplete="username" />
+    <label for="password">Password</label>
+    <input type="password" id="password" placeholder="Your password" autocomplete="current-password" />
+    <button class="btn btn-primary" id="login-btn">Sign In</button>
+  </div>
+
+  <!-- Save Note View -->
+  <div id="save-view" class="content">
+    <div class="error" id="save-error">Failed to save. Please try again.</div>
+    <label for="note-title">Title</label>
+    <input type="text" id="note-title" placeholder="Note title" />
+    <label for="note-url">URL</label>
+    <input type="url" id="note-url" placeholder="https://..." />
+    <label for="note-desc">Notes</label>
+    <textarea id="note-desc" placeholder="Quick note..."></textarea>
+    <label>Tags</label>
+    <div class="tag-row" id="tag-row"></div>
+    <div class="tag-input-row">
+      <input type="text" id="tag-input" placeholder="Add tag, press Enter" />
+      <button class="tag-add-btn" id="tag-add-btn">Add</button>
+    </div>
+    <button class="btn btn-primary" id="save-btn">Save to MemoryPal</button>
+    <button class="btn btn-secondary" id="logout-btn">Sign out</button>
+  </div>
+
+  <!-- Success View -->
+  <div id="success-view" class="success-view">
+    <div class="success-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="#7c3aed" width="24" height="24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+      </svg>
+    </div>
+    <div class="success-title">Saved to MemoryPal</div>
+    <div class="success-sub">Your note has been added to your second brain.</div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

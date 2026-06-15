@@ -5,6 +5,7 @@ interface CardProps {
     title: string;
     links: string[];
     description?: string;
+    tags?: string[];
     isShared?: boolean;
     shareHash?: string;
     onEdit: () => void;
@@ -12,7 +13,7 @@ interface CardProps {
     onRefresh: () => void;
 }
 
-export function Card({title, links, description, shareHash, onEdit, onDelete}: CardProps) {
+export function Card({title, links, description, tags, shareHash, onEdit, onDelete}: CardProps) {
     const firstLink = links && links.length > 0 ? links[0] : "";
 
     const getThumbnail = (url: string) => {
@@ -111,18 +112,34 @@ export function Card({title, links, description, shareHash, onEdit, onDelete}: C
             )}
 
             {/* Footer */}
-            <div className="mt-auto pt-3 border-t border-gray-50 flex items-center justify-between">
-                {links.length > 0 ? (
-                    <div className="flex items-center gap-1.5 text-gray-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
-                        </svg>
-                        <span className="text-xs font-medium">{links.length} {links.length === 1 ? 'link' : 'links'}</span>
+            <div className="mt-auto pt-3 border-t border-gray-50 space-y-2.5">
+                {tags && tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                        {tags.slice(0, 3).map(tag => (
+                            <span key={tag} className="px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg text-xs font-bold">
+                                #{tag}
+                            </span>
+                        ))}
+                        {tags.length > 3 && (
+                            <span className="px-2 py-0.5 bg-gray-50 text-gray-400 rounded-lg text-xs font-medium">
+                                +{tags.length - 3}
+                            </span>
+                        )}
                     </div>
-                ) : (
-                    <span className="text-xs text-gray-300">No links</span>
                 )}
-                <span className="text-xs text-purple-400 font-semibold opacity-0 group-hover:opacity-100 transition-opacity">Open →</span>
+                <div className="flex items-center justify-between">
+                    {links.length > 0 ? (
+                        <div className="flex items-center gap-1.5 text-gray-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                            </svg>
+                            <span className="text-xs font-medium">{links.length} {links.length === 1 ? "link" : "links"}</span>
+                        </div>
+                    ) : (
+                        <span className="text-xs text-gray-300">No links</span>
+                    )}
+                    <span className="text-xs text-purple-400 font-semibold opacity-0 group-hover:opacity-100 transition-opacity">Open →</span>
+                </div>
             </div>
         </div>
     );

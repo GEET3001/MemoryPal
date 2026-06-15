@@ -1,83 +1,153 @@
-# MemoryPal - Your Digital Second Brain 
+# MemoryPal — Your AI-Powered Second Brain
 
-MemoryPal is a premium, distraction-free laboratory for your thoughts. Capture notes, curate links, and chat with your personal AI companion—all in one place.
+MemoryPal is a distraction-free note-taking app that lets you capture ideas, curate links, and actually get things back out — powered by Google Gemini AI across your entire knowledge base.
 
-##  Key Features
+## Features
 
-- **Personal AI Assistant**: Every note gets its own AI companion that understands its specific context.
-- **Distraction-Free Editor**: A split-pane "Laboratory" layout for writing and brainstorming.
-- **Secure Sharing**: One-click sharing with protected, authenticated-only access.
-- **Context Isolation**: AI chats are isolated per note, ensuring your data remains private and relevant.
-- **Modern Tech**: Built with React, TypeScript, and Google's Gemini 2.0.
+- **Global AI Chat** — Ask questions across all your notes at once. "What did I save about fundraising?" → synthesized answer from your entire second brain.
+- **Per-Note AI Assistant** — Every note has its own AI companion that knows its specific context, with full chat history.
+- **Search** — Instant search across note titles, descriptions, and tags as you type.
+- **Tags + Smart Filtering** — Add tags manually or let AI suggest them. Filter your dashboard by tag in one click.
+- **Browser Extension** — Right-click any page → "Save to MemoryPal". Auto-fills title and URL. Works on any site.
+- **Secure Sharing** — One-click share links protected behind authentication.
+- **Distraction-Free Editor** — Split-pane layout: write on the left, chat with AI on the right.
 
-##  Application Workflows
+## Application Flows
 
-### 1. User Journey Flow
+### User Journey
 ```mermaid
 graph TD
-    A[Unauthenticated User] --> B{Sign Up / Sign In}
-    B -->|Success| C[Dashboard]
-    C --> D[Create New Note]
-    C --> E[View Existing Notes]
-    E --> F[Open Laboratory Workspace]
-    F --> G[Edit Content]
-    F --> H[Chat with AI Assistant]
-    F --> I[Share Note]
+    A[User] --> B{Sign Up / Sign In}
+    B --> C[Dashboard]
+    C --> D[New Note]
+    C --> E[Search & Filter by Tag]
+    C --> F[Ask AI — Global Chat]
+    D --> G[Editor + AI Assistant]
+    G --> H[AI Suggests Tags]
+    C --> I[Browser Extension Capture]
 ```
 
-### 2. AI Chat Architecture
+### Global AI Chat
 ```mermaid
 sequenceDiagram
     participant User
     participant Frontend
     participant Backend
-    participant Gemini_AI
+    participant Gemini
+
+    User->>Frontend: Asks a question
+    Frontend->>Backend: POST /api/v1/chat
+    Backend->>MongoDB: Fetch all user notes
+    MongoDB-->>Backend: Notes with tags + descriptions
+    Backend->>Gemini: System prompt with full knowledge base
+    Gemini-->>Backend: Synthesized answer
+    Backend-->>Frontend: Response
+    Frontend-->>User: Display answer
+```
+
+### Per-Note AI Chat
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant Backend
+    participant Gemini
     participant MongoDB
 
-    User->>Frontend: Sends message
-    Frontend->>Backend: POST /chat (with Context ID)
-    Backend->>MongoDB: Fetch Note Context & Chat History
-    MongoDB-->>Backend: Returns context
-    Backend->>Gemini_AI: Sends context + prompt
-    Gemini_AI-->>Backend: Returns AI Response
-    Backend->>MongoDB: Save User/AI Messages
-    Backend-->>Frontend: Send response
-    Frontend-->>User: Display AI text
+    User->>Frontend: Opens note, sends message
+    Frontend->>Backend: POST /api/v1/content/:id/chat
+    Backend->>MongoDB: Fetch note + chat history
+    MongoDB-->>Backend: Context + prior messages
+    Backend->>Gemini: System prompt scoped to this note
+    Gemini-->>Backend: Response
+    Backend->>MongoDB: Save user + model messages
+    Backend-->>Frontend: Response
+    Frontend-->>User: Display in chat pane
 ```
 
-### 3. Secure Note Sharing
+### Note Sharing
 ```mermaid
 graph LR
-    A[Owner Note] --> B[Click Share]
-    B --> C[Generate Share Hash]
-    C --> D[Copy Link to Clipboard]
-    D --> E[Public User Clicks Link]
-    E --> F{Is User Signed In?}
-    F -->|Yes| G[View Protected Note]
-    F -->|No| H[Redirect to Sign In]
+    A[Note Owner] --> B[Click Share]
+    B --> C[Copy link with share hash]
+    C --> D[Recipient clicks link]
+    D --> E{Signed in?}
+    E -->|Yes| F[View protected note]
+    E -->|No| G[Redirect to sign in]
 ```
 
-##  Tech Stack
+## Tech Stack
 
-### Frontend
-- **React + Vite**: High-performance UI.
-- **Tailwind CSS**: Premium minimalist styling.
-- **Axios**: Secure API communication.
+| Layer | Technology |
+|---|---|
+| Frontend | React 18 + Vite + TypeScript + Tailwind CSS |
+| Backend | Node.js + Express 5 + TypeScript |
+| Database | MongoDB + Mongoose |
+| Auth | JWT (7-day expiry) + bcrypt |
+| AI | Google Gemini 2.0 Flash (with 2.5 / 1.5 fallback) |
+| Browser Extension | Chrome Manifest V3 (plain JS) |
 
-### Backend
-- **Node.js & Express**: Scalable server architecture.
-- **TypeScript**: End-to-end type safety.
-- **MongoDB + Mongoose**: Real-time document storage.
-- **Gemini 2.0 Flash**: State-of-the-art AI integration.
+## Project Structure
 
-##  Deployment Guide
+```
+MemoryPal/
+├── backend/          # Express API
+│   └── src/
+│       ├── index.ts  # All routes
+│       ├── db.ts     # Mongoose models (User, Content, Chat, Tag)
+│       ├── middleware.ts
+│       └── config.ts
+├── frontend/         # React + Vite app
+│   └── src/
+│       ├── pages/    # Dashboard, Signin, Signup, SharedNote
+│       ├── components/  # Card, CreateContentModal, GlobalChatModal, ChatSection, ...
+│       └── hooks/    # useContent
+└── extension/        # Chrome browser extension
+    ├── manifest.json
+    ├── popup.html
+    ├── popup.js
+    └── background.js
+```
 
-### Backend (Railway/Render)
-1. Set `MONGO_URL`, `JWT_PASSWORD`, and `GEMINI_API_KEY` in environment variables.
-2. Ensure `PORT` is exposed.
+## API Reference
+
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/api/v1/signup` | Register |
+| POST | `/api/v1/signin` | Login → JWT |
+| GET | `/api/v1/content` | List notes (supports `?q=` search, `?tag=` filter) |
+| POST | `/api/v1/content` | Create note (title, links, description, tags) |
+| PUT | `/api/v1/content/:id` | Update note |
+| DELETE | `/api/v1/content` | Delete note |
+| GET | `/api/v1/tags` | List all tags used by the user |
+| POST | `/api/v1/suggest-tags` | AI-generated tag suggestions |
+| POST | `/api/v1/chat` | Global AI chat across all notes |
+| GET | `/api/v1/content/:id/chat` | Fetch per-note chat history |
+| POST | `/api/v1/content/:id/chat` | Send message to per-note AI |
+| GET | `/api/v1/shared/:hash` | View a shared note |
+
+## Deployment
+
+### Backend (Render / Railway)
+
+Set these environment variables:
+
+```
+MONGO_URL=mongodb+srv://...
+JWT_PASSWORD=your-secret-key
+GEMINI_API_KEY=your-gemini-key
+FRONTEND_URL=https://your-frontend.vercel.app
+PORT=3000
+```
 
 ### Frontend (Vercel)
-1. Update `BACKEND_URL` in `src/config.ts`.
-2. Run `npm run build` and deploy the `dist` folder.
 
----
+1. Set `BACKEND_URL` in `frontend/src/config.ts` to your backend URL.
+2. `npm run build` → deploy the `dist/` folder.
+
+### Browser Extension (Chrome)
+
+1. Go to `chrome://extensions`
+2. Enable **Developer mode**
+3. Click **Load unpacked** → select the `extension/` folder
+4. The MemoryPal icon appears in your toolbar. Right-click any page to save instantly.
