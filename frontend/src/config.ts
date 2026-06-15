@@ -1,1 +1,1 @@
-export const BACKEND_URL = "https://memorypal-c9m8.onrender.com/"
+export const BACKEND_URL = "https://memorypal-c9m8.onrender.com"
