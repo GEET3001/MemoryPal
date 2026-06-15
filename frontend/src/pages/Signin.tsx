@@ -3,13 +3,14 @@ import { Button } from "../components/Button";
 import { Input } from "../components/Input";
 import { BACKEND_URL } from "../config";
 import axios from "axios";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 
 export function Signin() {
     const usernameRef = useRef<HTMLInputElement>(null);
     const passwordRef = useRef<HTMLInputElement>(null);
     const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
 
     async function signin() {
         const username = usernameRef.current?.value.trim();
@@ -27,7 +28,7 @@ export function Signin() {
             });
             const jwt = response.data.token;
             localStorage.setItem("token", jwt);
-            navigate("/dashboard");
+            navigate(searchParams.get("redirect") || "/dashboard");
         } catch (e) {
             alert("Signin failed. Please check your credentials.");
         }

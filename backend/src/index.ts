@@ -336,7 +336,7 @@ app.delete("/api/v1/content", userMiddleware, async (req, res) => {
     res.json({ message: "Deleted" });
 });
 
-app.get("/api/v1/shared/:shareHash", async (req, res) => {
+app.get("/api/v1/shared/:shareHash", userMiddleware, async (req, res) => {
     try {
         const shareHash = req.params.shareHash;
         const content = await ContentModel.findOne({ shareHash });
