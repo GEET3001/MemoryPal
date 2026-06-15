@@ -102,10 +102,9 @@ export function CreateContentModal({open, onClose, initialData}: CreateContentMo
                 <header className="flex justify-between items-center px-8 py-8 border-b border-gray-50 bg-white">
                     <div className="flex items-center gap-6">
                         <div>
-                            <h1 className="text-3xl font-black text-gray-900 tracking-tight">
-                                {initialData ? "Workspace" : "New Insight"}
+                            <h1 className="text-2xl font-bold text-gray-900">
+                                {initialData ? "Edit Note" : "New Note"}
                             </h1>
-                            <p className="text-gray-400 font-bold text-[10px] uppercase tracking-[0.2em] mt-1">MemoryPal Laboratory</p>
                         </div>
                         {initialData && (
                             <button 
@@ -132,7 +131,7 @@ export function CreateContentModal({open, onClose, initialData}: CreateContentMo
                         <div className="max-w-4xl mx-auto space-y-12 pb-32">
                             {/* Title Section */}
                             <div className="space-y-4">
-                                <label className="text-[10px] font-black text-purple-600 uppercase tracking-[0.3em] ml-1">Context Title</label>
+                                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider ml-1">Title</label>
                                 <input 
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
@@ -143,7 +142,7 @@ export function CreateContentModal({open, onClose, initialData}: CreateContentMo
 
                             {/* Links Section */}
                             <div className="space-y-6">
-                                <label className="text-[10px] font-black text-purple-600 uppercase tracking-[0.3em] ml-1">Reference Links</label>
+                                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider ml-1">Links</label>
                                 <div className="space-y-3">
                                     {links.map((link, index) => (
                                         <div key={index} className="flex gap-2 group">
@@ -178,7 +177,7 @@ export function CreateContentModal({open, onClose, initialData}: CreateContentMo
 
                             {/* Description Section */}
                             <div className="space-y-6">
-                                <label className="text-[10px] font-black text-purple-600 uppercase tracking-[0.3em] ml-1">Deep Thoughts</label>
+                                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider ml-1">Notes</label>
                                 <textarea 
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
@@ -199,13 +198,13 @@ export function CreateContentModal({open, onClose, initialData}: CreateContentMo
 
                 {/* Fixed Footer */}
                 <footer className="px-8 py-8 border-t border-gray-50 bg-white flex justify-between items-center">
-                    <p className="text-gray-300 text-[10px] font-bold uppercase tracking-widest hidden md:block">MemoryPal System v2.0</p>
+                    <div></div>
                     <div className="w-full md:w-auto flex gap-4">
-                        <Button 
-                            onClick={handleSave} 
-                            variant="primary" 
-                            text={initialData ? "Synchronize & Exit" : "Save Perspective"} 
-                            fullWidth={false} 
+                        <Button
+                            onClick={handleSave}
+                            variant="primary"
+                            text="Save"
+                            fullWidth={false}
                         />
                     </div>
                 </footer>

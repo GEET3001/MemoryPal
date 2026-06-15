@@ -3,7 +3,6 @@ import { Button } from "../components/Button"
 import { Card } from "../components/Card"
 import { CreateContentModal } from "../components/CreateContentModal"
 import { PlusIcon } from "../icons/PlusIcon"
-import { ShareIcon } from "../icons/ShareIcon"
 import { useContent } from "../hooks/useContent"
 import { BACKEND_URL } from "../config"
 import axios from "axios"
@@ -103,7 +102,7 @@ export function Dashboard() {
                 </div>
             </div>
         ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 animate-in fade-in slide-in-from-bottom-8 duration-1000 ease-out">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {contents.map((note: any) => (
                     <Card 
                         key={note._id}

@@ -1,6 +1,7 @@
 import express from "express";
 import jwt from "jsonwebtoken";
 import cors from "cors";
+import bcryptjs from "bcryptjs";
 import { UserModel, ContentModel, ChatModel } from "./db";
 import { JWT_PASSWORD, PORT, GEMINI_API_KEY } from "./config";
 import { userMiddleware } from "./middleware";
@@ -9,7 +10,8 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+const corsOrigin = process.env.FRONTEND_URL;
+app.use(cors(corsOrigin ? { origin: corsOrigin, methods: ["GET", "POST", "PUT", "DELETE"] } : {}));
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 const modelAI = genAI.getGenerativeModel({ 
@@ -30,7 +32,8 @@ app.post("/api/v1/signup", async (req, res) => {
     const username = req.body.username?.trim();
     const password = req.body.password;
     try {
-        await UserModel.create({ username, password });
+        const hashedPassword = await bcryptjs.hash(password, 10);
+        await UserModel.create({ username, password: hashedPassword });
         res.json({ message: "User signed up" });
     } catch (e) {
         res.status(411).json({ message: "User already exists" });
@@ -40,10 +43,25 @@ app.post("/api/v1/signup", async (req, res) => {
 app.post("/api/v1/signin", async (req, res) => {
     const username = req.body.username?.trim();
     const password = req.body.password;
-    const existingUser = await UserModel.findOne({ username, password });
+    const existingUser = await UserModel.findOne({ username });
 
+    let isValid = false;
     if (existingUser) {
-        const token = jwt.sign({ id: existingUser._id }, JWT_PASSWORD);
+        const isHashed = existingUser.password.startsWith("$2");
+        if (isHashed) {
+            isValid = await bcryptjs.compare(password, existingUser.password);
+        } else {
+            // Legacy plaintext password — compare then migrate to bcrypt
+            isValid = existingUser.password === password;
+            if (isValid) {
+                const hashed = await bcryptjs.hash(password, 10);
+                await UserModel.updateOne({ _id: existingUser._id }, { password: hashed });
+            }
+        }
+    }
+
+    if (isValid && existingUser) {
+        const token = jwt.sign({ id: existingUser._id }, JWT_PASSWORD, { expiresIn: "7d" });
         res.json({ token });
     } else {
         res.status(403).json({ message: "Incorrect credentials" });
