@@ -336,14 +336,18 @@ app.delete("/api/v1/content", userMiddleware, async (req, res) => {
     res.json({ message: "Deleted" });
 });
 
-app.get("/api/v1/shared/:shareHash", userMiddleware, async (req, res) => {
-    const shareHash = req.params.shareHash;
-    const content = await ContentModel.findOne({ shareHash });
-    if (!content) {
-        res.status(404).json({ message: "Note not found" });
-        return;
+app.get("/api/v1/shared/:shareHash", async (req, res) => {
+    try {
+        const shareHash = req.params.shareHash;
+        const content = await ContentModel.findOne({ shareHash });
+        if (!content) {
+            res.status(404).json({ message: "Note not found" });
+            return;
+        }
+        res.json({ content });
+    } catch (e) {
+        res.status(500).json({ message: "Error fetching shared note" });
     }
-    res.json({ content });
 });
 
 app.listen(PORT, () => {
